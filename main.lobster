@@ -8,15 +8,39 @@ class Building:
   cost: int
 
 let all_buildings = [
-  Building { "Hut", 1, 10 },
-  Building { "House", 4, 75 },
-  Building { "Store", 10, 675 },
+  Building { "Hut", 1, 5 },
+  Building { "House", 4, 35 },
+  Building { "Store", 10, 195 },
 ]
 
-fatal(gl_window("imgui demo", 1280, 1024))
+fatal(gl_window("Simple Clicker", 1280, 1024))
 
 im_init(false)
 assert im_add_font("data/fonts/Droid_Sans/DroidSans.ttf", 20.0)
+
+var gold = 0.0
+var buildings = [1, 0, 0]
+
+def building_cost(idx):
+  let info = all_buildings[idx]
+  let num = buildings[idx]
+  return int(info.cost * pow(1.1, num))
+
+def buildings_gps():
+  var ret = 0.0
+  for(length(all_buildings)) i:
+    ret += buildings[i] * all_buildings[i].gps
+  return ret
+
+def building_gui(idx):
+  let info = all_buildings[idx]
+  let num = buildings[idx]
+  let cost = building_cost(idx)
+  im_text(info.name + ": " + num)
+  im_button("Buy: " + cost + "g"):
+    if gold >= cost:
+      buildings[idx] += 1
+      gold -= cost
 
 def main():
   let window_flags = (
@@ -28,12 +52,17 @@ def main():
     if gl_button("escape") == 1:
       return
 
+    let dt = gl_delta_time()
+    let gps = buildings_gps()
+    gold += dt * gps
+
     gl_clear(color_grey)
 
-    // <- Render game here.
     im_frame():
+      im_window("Money", window_flags):
+        im_text("Gold: " + int(gold) + " (+" + gps + "/s)")
       im_window("Buildings", window_flags):
-        for(all_buildings) building:
-          im_text(building.name)
+        for(length(all_buildings)) idx:
+          building_gui(idx)
 
 main()
