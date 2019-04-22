@@ -21,9 +21,11 @@ assert im_add_font("data/fonts/Droid_Sans/DroidSans.ttf", 20.0)
 var gold = 0.0
 var buildings = [1, 0, 0]
 
+def building_infonum(idx):
+  return all_buildings[idx], buildings[idx]
+
 def building_cost(idx):
-  let info = all_buildings[idx]
-  let num = buildings[idx]
+  let info, num = building_infonum(idx)
   return int(info.cost * pow(1.1, num))
 
 def buildings_gps():
@@ -33,8 +35,7 @@ def buildings_gps():
   return ret
 
 def building_gui(idx):
-  let info = all_buildings[idx]
-  let num = buildings[idx]
+  let info, num = building_infonum(idx)
   let cost = building_cost(idx)
   im_text(info.name + ": " + num)
   im_button("Buy: " + cost + "g"):
