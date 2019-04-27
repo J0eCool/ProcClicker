@@ -13,13 +13,8 @@ let all_buildings = [
   Building { "Store", 10, 195 },
 ]
 
-fatal(gl_window("Simple Clicker", 1280, 1024))
-
-im_init(false)
-assert im_add_font("data/fonts/Droid_Sans/DroidSans.ttf", 20.0)
-
 var gold = 0.0
-var buildings = [1, 0, 0]
+let buildings = [1, 0, 0]
 
 def building_infonum(idx):
   return all_buildings[idx], buildings[idx]
@@ -43,7 +38,28 @@ def building_gui(idx):
       buildings[idx] += 1
       gold -= cost
 
+def do_grid(dt):
+  let w = 8
+  let h = 8
+  let size = xy_f { 64, 64 }
+  let origin = xy_f { 300, 200 }
+  let border = 4
+  for(h) y:
+    for(w) x:
+      let pos = origin + (size + border) * xy_f { x, y }
+      gl_translate(pos):
+        if gl_hit(size, 0):
+          gl_color(color_red)
+        else:
+          gl_color(color_green)
+        gl_rect(size)
+
 def main():
+  fatal(gl_window("Simple Clicker", 1280, 1024))
+
+  im_init(false)
+  assert im_add_font("data/fonts/Droid_Sans/DroidSans.ttf", 20.0)
+
   let window_flags = (
       im_window_no_collapse
     | im_window_always_autoresize
@@ -58,6 +74,8 @@ def main():
     gold += dt * gps
 
     gl_clear(color_grey)
+
+    do_grid(dt)
 
     im_frame():
       im_window("Money", window_flags):
