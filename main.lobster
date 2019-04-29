@@ -4,39 +4,18 @@ import imgui
 
 class Building:
   name: string
-  gps: int
-  cost: int
+  color: color
 
 let all_buildings = [
-  Building { "Hut", 1, 5 },
-  Building { "House", 4, 35 },
-  Building { "Store", 10, 195 },
+  Building { "Copper Mine", color { 0.8, 0.7, 0.3, 1.0 }},
+  Building { "Belt", color { 0.6, 0.6, 0.6, 1.0 }},
 ]
 
 var gold = 0.0
-let buildings = [1, 0, 0]
-
-def building_infonum(idx):
-  return all_buildings[idx], buildings[idx]
-
-def building_cost(idx):
-  let info, num = building_infonum(idx)
-  return int(info.cost * pow(1.1, num))
-
-def buildings_gps():
-  var ret = 0.0
-  for(length(all_buildings)) i:
-    ret += buildings[i] * all_buildings[i].gps
-  return ret
 
 def building_gui(idx):
-  let info, num = building_infonum(idx)
-  let cost = building_cost(idx)
-  im_text(info.name + ": " + num)
-  im_button("Buy: " + cost + "g"):
-    if gold >= cost:
-      buildings[idx] += 1
-      gold -= cost
+  let info = all_buildings[idx]
+  im_text(info.name + ": " + info.color)
 
 def do_grid(dt):
   let w = 8
@@ -86,7 +65,7 @@ def main():
       return
 
     let dt = gl_delta_time()
-    let gps = buildings_gps()
+    let gps = 0.0
     gold += dt * gps
 
     gl_clear(background_color)
