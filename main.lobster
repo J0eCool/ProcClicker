@@ -2,8 +2,9 @@ import vec
 import color
 import imgui
 
+def debug_t() -> void
 var debug_items = []
-def debug(f):
+def debug(f: debug_t):
   debug_items.push(f)
 
 class Building:
@@ -31,7 +32,6 @@ def do_grid(dt):
 
   debug():
     grid_h = im_sliderint("grid h", grid_h, 1, 32)
-  debug():
     grid_w = im_sliderint("grid w", grid_w, 1, 32)
 
   // borders
