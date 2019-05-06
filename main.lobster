@@ -13,6 +13,15 @@ let gui_window_flags = (
   | im_window_no_nav_inputs
   )
 
+var tri_res: resource? = nil
+def draw_triangle(pos, size, angle):
+  gl_translate(pos):
+    gl_rotate_z(angle):
+      gl_scale(size):
+        gl_render_mesh(tri_res)
+def draw_triangle(pos, size):
+  draw_triangle(pos, size, xy_f { 0.0, -1.0 })
+
 class Building:
   name: string
   color: color
@@ -68,14 +77,30 @@ def do_grid(dt):
     for(grid_w) x:
       let pos = grid_origin + (cell_size + cell_border) * xy_f { x, y }
       gl_translate(pos):
-        if gl_hit(cell_size, 0):
+        let mouse_over = gl_hit(cell_size, 0)
+        if mouse_over:
           gl_color(color_red)
         else:
           gl_color(color_green)
         gl_rect(cell_size)
+        if mouse_over:
+          gl_color(color_white)
+          let center = cell_size / 2
+          let arrow_offset = cell_size * 0.45
+          let arrow_size = 8
+          draw_triangle(center, arrow_size)
+          draw_triangle(center + xy_f { arrow_offset.x, 0 }, arrow_size, xy_f { 1, 0 })
+          draw_triangle(center + xy_f { -arrow_offset.x, 0 }, arrow_size, xy_f { -1, 0 })
+          draw_triangle(center + xy_f { 0, arrow_offset.y }, arrow_size, xy_f { 0, 1 })
+          draw_triangle(center + xy_f { 0, -arrow_offset.y }, arrow_size, xy_f { 0, -1 })
 
 def main():
   fatal(gl_window("Simple Clicker", 1280, 1024))
+  tri_res = gl_new_poly([
+    xy_f {0.5, 0},
+    xy_f {-0.5, .7},
+    xy_f {-0.5, -.7},
+  ])
 
   im_init(false)
   assert im_add_font("data/fonts/Droid_Sans/DroidSans.ttf", 20.0)
@@ -93,6 +118,9 @@ def main():
     debug():
       background_color = im_coloredit("background_color", background_color)
     gl_clear(background_color)
+
+    gl_color(color_blue)
+    draw_triangle(xy_f { 300, 600 }, 300)
 
     do_grid(dt)
 
