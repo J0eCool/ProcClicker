@@ -22,6 +22,27 @@ def draw_triangle(pos, size, angle):
 def draw_triangle(pos, size):
   draw_triangle(pos, size, xy_f { 0.0, -1.0 })
 
+let left  = xy_f {  1,  0 }
+let right = xy_f { -1,  0 }
+let up    = xy_f {  0, -1 }
+let down  = xy_f {  0,  1 }
+let all_dirs = [up, right, down, left]
+
+enum Dir:
+  d_up
+  d_right
+  d_down
+  d_left
+def to_vec(d: Dir) -> xy_f:
+  return all_dirs[int(d)]
+let dirs: [Dir] = [
+  d_up,
+  d_right,
+  d_down,
+  d_left,
+]
+
+
 class Building:
   name: string
   color: color
@@ -89,10 +110,10 @@ def do_grid(dt):
           let arrow_offset = cell_size * 0.45
           let arrow_size = 8
           draw_triangle(center, arrow_size)
-          draw_triangle(center + xy_f { arrow_offset.x, 0 }, arrow_size, xy_f { 1, 0 })
-          draw_triangle(center + xy_f { -arrow_offset.x, 0 }, arrow_size, xy_f { -1, 0 })
-          draw_triangle(center + xy_f { 0, arrow_offset.y }, arrow_size, xy_f { 0, 1 })
-          draw_triangle(center + xy_f { 0, -arrow_offset.y }, arrow_size, xy_f { 0, -1 })
+          for(dirs.length) d:
+            let de: Dir = dirs[d]
+            let dv = to_vec(de)
+            draw_triangle(center + dv * arrow_offset, arrow_size, dv)
 
 def main():
   fatal(gl_window("Simple Clicker", 1280, 1024))
