@@ -63,8 +63,11 @@ def building_gui():
 var grid_w = 10
 var grid_h = 10
 var grid_origin = xy_f { 600, 100 }
-var cell_size = xy_f { 40, 40 }
+var cell_size = xy_f { 48, 48 }
 var cell_border = 4.0
+var arrow_offset_pct = 0.45
+var arrow_size = 12
+var sel_x, sel_y = -1, -1
 def do_grid(dt):
   let all_size = xy_f { grid_w, grid_h } * (cell_size + cell_border)
 
@@ -81,6 +84,8 @@ def do_grid(dt):
         int(im_sliderint("cell h", int(cell_size.y), 8, 128) / 4) * 4.0,
       }
       cell_border = im_sliderfloat("border", cell_border, 0.0, 10.0)
+      arrow_offset_pct = im_sliderfloat("arrow_offset_pct", arrow_offset_pct, 0.0, 1.0)
+      arrow_size = im_sliderint("arrow_size", arrow_size, 2, 32)
 
   // borders
   gl_color(color { .4, .6, .3, 1 })
@@ -98,22 +103,21 @@ def do_grid(dt):
     for(grid_w) x:
       let pos = grid_origin + (cell_size + cell_border) * xy_f { x, y }
       gl_translate(pos):
-        let mouse_over = gl_hit(cell_size, 0)
-        if mouse_over:
+        if gl_hit(cell_size, 0):
+          if gl_button("mouse1") == 1:
+            sel_x, sel_y = x, y
+        let selected = sel_x == x and sel_y == y
+        if selected:
           gl_color(color_red)
         else:
           gl_color(color_green)
         gl_rect(cell_size)
-        if mouse_over:
+        if selected:
           gl_color(color_white)
           let center = cell_size / 2
-          let arrow_offset = cell_size * 0.45
-          let arrow_size = 8
-          draw_triangle(center, arrow_size)
-          for(dirs.length) d:
-            let de: Dir = dirs[d]
-            let dv = to_vec(de)
-            draw_triangle(center + dv * arrow_offset, arrow_size, dv)
+          let arrow_offset = cell_size * arrow_offset_pct
+          for(all_dirs) d:
+            draw_triangle(center + d * arrow_offset, arrow_size, d)
 
 def main():
   fatal(gl_window("Simple Clicker", 1280, 1024))
