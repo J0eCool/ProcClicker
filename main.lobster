@@ -43,13 +43,16 @@ let dirs: [Dir] = [
 ]
 
 
-class Building:
+class BuildingInfo:
   name: string
   color: color
+class Building:
+  info: BuildingInfo
+  dir: Dir
 
 let all_buildings = [
-  Building { "Copper Mine", color { 0.8, 0.7, 0.3, 1.0 }},
-  Building { "Belt", color { 0.6, 0.6, 0.6, 1.0 }},
+  BuildingInfo { "Copper Mine", color { 0.8, 0.7, 0.3, 1.0 }},
+  BuildingInfo { "Belt", color { 0.6, 0.6, 0.6, 1.0 }},
 ]
 
 var gold = 0.0
@@ -64,6 +67,9 @@ def building_gui():
         info.name
       im_button(name):
         selected_building_idx = idx
+
+let building_grid: [[Building?]] = []
+var selected_dir = d_right
 
 var grid_w = 10
 var grid_h = 10
@@ -92,6 +98,13 @@ def do_grid(dt):
       arrow_offset_pct = im_sliderfloat("arrow_offset_pct", arrow_offset_pct, 0.0, 1.0)
       arrow_size = im_sliderint("arrow_size", arrow_size, 2, 32)
 
+  // renormalize grid cells
+  while building_grid.length < grid_w:
+    building_grid.push([])
+  for(building_grid) row:
+    while row.length < grid_h:
+      row.push(nil)
+
   // borders
   gl_color(color { .4, .6, .3, 1 })
   for(grid_w + 1) i:
@@ -104,23 +117,33 @@ def do_grid(dt):
     gl_line(start, end, cell_border)
 
   // grid
-  for(grid_h) y:
-    for(grid_w) x:
+  for(building_grid) row, x:
+    for(row) building, y:
       let pos = grid_origin + (cell_size + cell_border) * xy_f { x, y }
       gl_translate(pos):
         if gl_hit(cell_size, 0):
           hovered_cell = xy {x, y}
-        gl_color(color_green)
-        gl_rect(cell_size)
-        if hovered_cell.x == x and hovered_cell.y == y:
+          if gl_button("mouse1") >= 1:
+            building = Building {
+              info: all_buildings[selected_building_idx],
+              dir: selected_dir,
+            }
+            building_grid[x][y] = building
+          if gl_button("mouse3") >= 1:
+            building = nil
+            building_grid[x][y] = building
+        if not building:
+          gl_color(color_green)
+          gl_rect(cell_size)
+        else:
+          gl_color(building.info.color)
+          gl_rect(cell_size)
           gl_color(color_white)
           let center = cell_size / 2
           let arrow_offset = cell_size * arrow_offset_pct
-          for(dirs) d:
-            let dv = d.to_vec()
-            draw_triangle(center + dv * arrow_offset, arrow_size, dv)
+          let d = building.dir.to_vec()
+          draw_triangle(center + d * arrow_offset, arrow_size, d)
 
-var selected_dir = d_right
 def update_dir():
   let axes = ["up", "right", "down", "left"]
   for(axes) input, i:
