@@ -65,49 +65,47 @@ def building_gui():
       im_button(name):
         selected_building_idx = idx
 
-var grid_dim = xy { 10, 10 }
-var grid_origin = xy { 600, 100 }
-var cell_size = xy { 48, 48 }
-var cell_border = 4
+var grid_w = 10
+var grid_h = 10
+var grid_origin = xy_f { 600, 100 }
+var cell_size = xy_f { 48, 48 }
+var cell_border = 4.0
 var arrow_offset_pct = 0.45
 var arrow_size = 12
-var hovered_cell = xy { -1, -1 }
+var hovered_cell = xy_i { -1, -1 }
 def do_grid(dt):
-  let all_size = grid_dim * (cell_size + cell_border)
+  let all_size = xy_f { grid_w, grid_h } * (cell_size + cell_border)
 
   debug():
     im_treenode("grid"):
-      grid_dim = xy {
-        im_sliderint("grid w", grid_dim.x, 1, 32),
-        im_sliderint("grid h", grid_dim.y, 1, 32),
+      grid_w = im_sliderint("grid w", grid_w, 1, 32)
+      grid_h = im_sliderint("grid h", grid_h, 1, 32)
+      grid_origin = xy_f {
+        im_sliderint("grid pos x", int(grid_origin.x), 0, 1024),
+        im_sliderint("grid pox y", int(grid_origin.y), 0, 1024),
       }
-      grid_origin = xy {
-        im_sliderint("grid pos x", grid_origin.x, 0, 1024),
-        im_sliderint("grid pox y", grid_origin.y, 0, 1024),
+      cell_size = xy_f {
+        int(im_sliderint("cell w", int(cell_size.x), 8, 128) / 4) * 4.0,
+        int(im_sliderint("cell h", int(cell_size.y), 8, 128) / 4) * 4.0,
       }
-      cell_size = xy {
-        (im_sliderint("cell w", cell_size.x, 8, 128) / 4) * 4,
-        (im_sliderint("cell h", cell_size.y, 8, 128) / 4) * 4,
-      }
-      cell_border = im_sliderint("border", cell_border, 0, 10)
+      cell_border = im_sliderfloat("border", cell_border, 0.0, 10.0)
       arrow_offset_pct = im_sliderfloat("arrow_offset_pct", arrow_offset_pct, 0.0, 1.0)
       arrow_size = im_sliderint("arrow_size", arrow_size, 2, 32)
 
   // borders
   gl_color(color { .4, .6, .3, 1 })
-  for(grid_dim.x + 1) i:
-    let start = grid_origin + xy { (cell_size.x + cell_border) * i, 0 } - cell_border/2
-    let end = start + xy { 0, all_size.y }
-    // Fails here: error: "gl_line" (1st argument) requires type: xy_f, got: xy_i
+  for(grid_w + 1) i:
+    let start = grid_origin + xy_f { (cell_size.x + cell_border) * i, 0.0 } - cell_border/2
+    let end = start + xy_f { 0.0, all_size.y }
     gl_line(start, end, cell_border)
-  for(grid_dim.y + 1) i:
-    let start = grid_origin + xy { 0, (cell_size.y + cell_border) * i } - cell_border/2
-    let end = start + xy { all_size.x, 0 }
+  for(grid_h + 1) i:
+    let start = grid_origin + xy_f { 0.0, (cell_size.y + cell_border) * i } - cell_border/2
+    let end = start + xy_f { all_size.x, 0.0 }
     gl_line(start, end, cell_border)
 
   // grid
-  for(grid_dim.y) y:
-    for(grid_dim.x) x:
+  for(grid_h) y:
+    for(grid_w) x:
       let pos = grid_origin + (cell_size + cell_border) * xy_f { x, y }
       gl_translate(pos):
         if gl_hit(cell_size, 0):
