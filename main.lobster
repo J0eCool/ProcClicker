@@ -22,8 +22,8 @@ def draw_triangle(pos, size, angle):
 def draw_triangle(pos, size):
   draw_triangle(pos, size, xy_f { 0.0, -1.0 })
 
-let left  = xy_f {  1,  0 }
-let right = xy_f { -1,  0 }
+let left  = xy_f { -1,  0 }
+let right = xy_f {  1,  0 }
 let up    = xy_f {  0, -1 }
 let down  = xy_f {  0,  1 }
 let all_dirs = [up, right, down, left]
@@ -116,8 +116,17 @@ def do_grid(dt):
           gl_color(color_white)
           let center = cell_size / 2
           let arrow_offset = cell_size * arrow_offset_pct
-          for(all_dirs) d:
-            draw_triangle(center + d * arrow_offset, arrow_size, d)
+          for(dirs) d:
+            let dv = d.to_vec()
+            draw_triangle(center + dv * arrow_offset, arrow_size, dv)
+
+var selected_dir = d_right
+def update_dir():
+  let axes = ["up", "right", "down", "left"]
+  for(axes) input, i:
+    if gl_button(input) == 1:
+      selected_dir = dirs[i]
+      return
 
 def main():
   fatal(gl_window("Simple Clicker", 1280, 1024))
@@ -136,6 +145,8 @@ def main():
     if gl_button("escape") == 1:
       return
 
+    update_dir()
+
     let dt = gl_delta_time()
     let gps = 0.0
     gold += dt * gps
@@ -145,7 +156,7 @@ def main():
     gl_clear(background_color)
 
     gl_color(color_blue)
-    draw_triangle(xy_f { 300, 600 }, 300)
+    draw_triangle(xy_f { 300, 600 }, 300, selected_dir.to_vec())
 
     do_grid(dt)
 
