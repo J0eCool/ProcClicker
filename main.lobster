@@ -54,11 +54,16 @@ let all_buildings = [
 
 var gold = 0.0
 
+var selected_building_idx = 0
 def building_gui():
   im_window("Buildings", gui_window_flags):
-    for(length(all_buildings)) idx:
-      let info = all_buildings[idx]
-      im_text(info.name + ": " + info.color)
+    for(all_buildings) info, idx:
+      let name = if idx == selected_building_idx:
+        "**" + info.name + "**"
+      else:
+        info.name
+      im_button(name):
+        selected_building_idx = idx
 
 var grid_w = 10
 var grid_h = 10
@@ -67,7 +72,7 @@ var cell_size = xy_f { 48, 48 }
 var cell_border = 4.0
 var arrow_offset_pct = 0.45
 var arrow_size = 12
-var sel_x, sel_y = -1, -1
+var hovered_cell = xy_i { -1, -1 }
 def do_grid(dt):
   let all_size = xy_f { grid_w, grid_h } * (cell_size + cell_border)
 
@@ -104,15 +109,10 @@ def do_grid(dt):
       let pos = grid_origin + (cell_size + cell_border) * xy_f { x, y }
       gl_translate(pos):
         if gl_hit(cell_size, 0):
-          if gl_button("mouse1") == 1:
-            sel_x, sel_y = x, y
-        let selected = sel_x == x and sel_y == y
-        if selected:
-          gl_color(color_red)
-        else:
-          gl_color(color_green)
+          hovered_cell = xy {x, y}
+        gl_color(color_green)
         gl_rect(cell_size)
-        if selected:
+        if hovered_cell.x == x and hovered_cell.y == y:
           gl_color(color_white)
           let center = cell_size / 2
           let arrow_offset = cell_size * arrow_offset_pct
