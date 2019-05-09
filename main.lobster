@@ -71,8 +71,7 @@ def building_gui():
 let building_grid: [[Building?]] = []
 var selected_dir = d_right
 
-var grid_w = 10
-var grid_h = 10
+var grid_dim = xy_i { 10, 10 }
 var grid_origin = xy_f { 600, 100 }
 var cell_size = xy_f { 48, 48 }
 var cell_border = 4.0
@@ -80,12 +79,14 @@ var arrow_offset_pct = 0.45
 var arrow_size = 12
 var hovered_cell = xy_i { -1, -1 }
 def do_grid(dt):
-  let all_size = xy_f { grid_w, grid_h } * (cell_size + cell_border)
+  let all_size = float(grid_dim) * (cell_size + cell_border)
 
   debug():
     im_treenode("grid"):
-      grid_w = im_sliderint("grid w", grid_w, 1, 32)
-      grid_h = im_sliderint("grid h", grid_h, 1, 32)
+      grid_dim = xy_i {
+        im_sliderint("grid w", grid_dim.x, 1, 32),
+        im_sliderint("grid h", grid_dim.y, 1, 32),
+      }
       grid_origin = xy_f {
         im_sliderint("grid pos x", int(grid_origin.x), 0, 1024),
         im_sliderint("grid pox y", int(grid_origin.y), 0, 1024),
@@ -99,20 +100,28 @@ def do_grid(dt):
       arrow_size = im_sliderint("arrow_size", arrow_size, 2, 32)
 
   // renormalize grid cells
-  while building_grid.length < grid_w:
-    building_grid.push([])
+  while building_grid.length != grid_dim.x:
+    if building_grid.length < grid_dim.x:
+      building_grid.push([])
+    else:
+      building_grid.remove(grid_dim.x, building_grid.length - grid_dim.x)
   for(building_grid) row:
-    while row.length < grid_h:
-      row.push(nil)
+    while row.length != grid_dim.y:
+      if row.length < grid_dim.y:
+        row.push(nil)
+      else:
+        row.remove(grid_dim.y, row.length - grid_dim.y)
 
   // borders
   gl_color(color { .4, .6, .3, 1 })
-  for(grid_w + 1) i:
-    let start = grid_origin + xy_f { (cell_size.x + cell_border) * i, 0.0 } - cell_border/2
+  let cell_with_border = cell_size + cell_border
+  let border_origin = grid_origin - cell_border / 2
+  for(grid_dim.x + 1) i:
+    let start = border_origin + cell_with_border * i * xy_x
     let end = start + xy_f { 0.0, all_size.y }
     gl_line(start, end, cell_border)
-  for(grid_h + 1) i:
-    let start = grid_origin + xy_f { 0.0, (cell_size.y + cell_border) * i } - cell_border/2
+  for(grid_dim.y + 1) i:
+    let start = border_origin + cell_with_border * i * xy_y
     let end = start + xy_f { all_size.x, 0.0 }
     gl_line(start, end, cell_border)
 
