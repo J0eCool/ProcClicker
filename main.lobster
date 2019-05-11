@@ -19,8 +19,6 @@ def draw_triangle(pos, size, angle):
     gl_rotate_z(angle):
       gl_scale(size):
         gl_render_mesh(tri_res)
-def draw_triangle(pos, size):
-  draw_triangle(pos, size, xy_f { 0.0, -1.0 })
 
 let left  = xy_f { -1,  0 }
 let right = xy_f {  1,  0 }
@@ -60,13 +58,9 @@ var gold = 0.0
 var selected_building_idx = 0
 def building_gui():
   im_window("Buildings", gui_window_flags):
-    for(all_buildings) info, idx:
-      let name = if idx == selected_building_idx:
-        "**" + info.name + "**"
-      else:
-        info.name
-      im_button(name):
-        selected_building_idx = idx
+    let names = map(all_buildings) b:
+      b.name
+    selected_building_idx = im_listbox("", names, selected_building_idx, all_buildings.length)
 
 let building_grid: [[Building?]] = []
 var selected_dir = d_right
@@ -128,7 +122,7 @@ def do_grid(dt):
   // grid
   for(building_grid) row, x:
     for(row) building, y:
-      let pos = grid_origin + (cell_size + cell_border) * xy_f { x, y }
+      let pos = grid_origin + cell_with_border * xy_f { x, y }
       gl_translate(pos):
         if gl_hit(cell_size, 0):
           hovered_cell = xy {x, y}
