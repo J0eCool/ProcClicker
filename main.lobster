@@ -32,7 +32,7 @@ enum Dir:
   d_down
   d_left
 def to_vec(d: Dir) -> xy_f:
-  return all_dirs[int(d)]
+  return all_dirs[d]
 let dirs: [Dir] = [
   d_up,
   d_right,
@@ -41,26 +41,38 @@ let dirs: [Dir] = [
 ]
 
 
-class BuildingInfo:
+class Resource:
   name: string
   color: color
+enum ResourceKind:
+  b_mine
+  b_belt
+
+let resource_data = [
+  Resource { "Copper Mine", color { 0.8, 0.7, 0.3, 1.0 }},
+  Resource { "Belt", color { 0.6, 0.6, 0.6, 1.0 }},
+]
+
 class Building:
-  info: BuildingInfo
+  info: Resource
   dir: Dir
 
+// Not all resources can be built
 let all_buildings = [
-  BuildingInfo { "Copper Mine", color { 0.8, 0.7, 0.3, 1.0 }},
-  BuildingInfo { "Belt", color { 0.6, 0.6, 0.6, 1.0 }},
+  b_mine,
+  b_belt,
 ]
 
 var gold = 0.0
 
-var selected_building_idx = 0
+var selected_building: ResourceKind = b_mine
 def building_gui():
   im_window("Buildings", gui_window_flags):
     let names = map(all_buildings) b:
-      b.name
-    selected_building_idx = im_listbox("", names, selected_building_idx, all_buildings.length)
+      resource_data[b].name
+    let idx = im_listbox("", names, selected_building, all_buildings.length)
+    if idx != selected_building:
+      selected_building = ResourceKind(idx)
 
 let building_grid: [[Building?]] = []
 var selected_dir = d_right
@@ -128,7 +140,7 @@ def do_grid(dt):
           hovered_cell = xy {x, y}
           if gl_button("mouse1") >= 1:
             building = Building {
-              info: all_buildings[selected_building_idx],
+              info: resource_data[selected_building],
               dir: selected_dir,
             }
             building_grid[x][y] = building
