@@ -3,8 +3,8 @@ import color
 import imgui
 
 def debug_t() -> void
-let debug_items = []
-def debug(f: debug_t):
+let debug_items: [debug_t] = []
+def debug(f):
   debug_items.push(f)
 
 let gui_window_flags = (
@@ -27,30 +27,38 @@ let down  = xy_f {  0,  1 }
 let all_dirs = [up, right, down, left]
 
 enum Dir:
+  // counterclockwise, starting from up
   d_up
   d_right
   d_down
   d_left
 def to_vec(d: Dir) -> xy_f:
   return all_dirs[d]
-let dirs: [Dir] = [
-  d_up,
-  d_right,
-  d_down,
-  d_left,
-]
+let dirs = [d_up, d_right, d_down, d_left]
 
 
+enum ResourceKind:
+  b_copper
+  b_mine
+  b_belt
+struct ResourcePair:
+  res: ResourceKind
+  num: int
+class Recipe:
+  output: ResourceKind
+  inputs: [ResourcePair]
+  ticks: int
 class Resource:
   name: string
   color: color
-enum ResourceKind:
-  b_mine
-  b_belt
+  recipes: [Recipe]
 
 let resource_data = [
-  Resource { "Copper Mine", color { 0.8, 0.7, 0.3, 1.0 }},
-  Resource { "Belt", color { 0.6, 0.6, 0.6, 1.0 }},
+  Resource { "Copper", color { 0.8, 0.7, 0.3, 1.0 }, []},
+  Resource { "Mine", color { 0.7, 0.7, 0.9, 1.0 }, [
+    Recipe { b_copper, [], 5 },
+  ]},
+  Resource { "Belt", color { 0.6, 0.6, 0.6, 1.0 }, []},
 ]
 
 class Building:
@@ -139,8 +147,9 @@ def do_grid(dt):
         if gl_hit(cell_size, 0):
           hovered_cell = xy {x, y}
           if gl_button("mouse1") >= 1:
+            let building_idx = all_buildings[selected_building]
             building = Building {
-              info: resource_data[selected_building],
+              info: resource_data[building_idx],
               dir: selected_dir,
             }
             building_grid[x][y] = building
