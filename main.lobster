@@ -7,6 +7,12 @@ let debug_items: [debug_t] = []
 def debug(f):
   debug_items.push(f)
 
+def contains(xs, x):
+  for(xs) t:
+    if t == x:
+      return true
+  return false
+
 let gui_window_flags = (
     im_window_no_collapse
   | im_window_always_autoresize
@@ -42,6 +48,7 @@ enum ResourceKind:
   b_mine
   b_factory
   b_belt
+  b_RES_COUNT // last
 struct ResourcePair:
   res: ResourceKind
   num: int
@@ -68,9 +75,11 @@ let resource_data = [
 ]
 
 class Building:
-  info: Resource
+  kind: ResourceKind
   dir: Dir
   ticks: int
+def info(building: Building):
+  return resource_data[building.kind]
 
 // Not all resources can be built
 let all_buildings = [
@@ -79,16 +88,25 @@ let all_buildings = [
   b_factory,
 ]
 
-var gold = 0.0
+let building_counts = []
+for(b_RES_COUNT) _:
+  building_counts.push(0)
+building_counts[b_mine] = 2
 
 var selected_building = 0
+def disp_name(b):
+  return resource_data[b].name + ": " + building_counts[b]
 def building_gui():
   im_window("Buildings", gui_window_flags):
-    let names = map(all_buildings) b:
-      resource_data[b].name
+    let names = map(all_buildings): disp_name(_)
+    im_text("Buildings")
     let idx = im_listbox("", names, selected_building, all_buildings.length)
     if idx != selected_building:
       selected_building = idx
+    im_text("Resources")
+    let non_buildings = filter(b_RES_COUNT): not all_buildings.contains(_)
+    let res_names = map(non_buildings): disp_name(_)
+    im_listbox(" ", res_names, -1, res_names.length)
 
 let building_grid: [[Building?]] = []
 var selected_dir = d_right
@@ -155,9 +173,9 @@ def do_grid(dt):
         if gl_hit(cell_size, 0):
           hovered_cell = xy {x, y}
           if gl_button("mouse1") >= 1:
-            let building_idx = all_buildings[selected_building]
+            let kind = all_buildings[selected_building]
             building = Building {
-              info: resource_data[building_idx],
+              kind: kind,
               dir: selected_dir,
               ticks: 0,
             }
@@ -204,8 +222,6 @@ def main():
     update_dir()
 
     let dt = gl_delta_time()
-    let gps = 0.0
-    gold += dt * gps
 
     debug():
       background_color = im_coloredit("background_color", background_color)
@@ -217,8 +233,6 @@ def main():
     do_grid(dt)
 
     im_frame():
-      im_window("Money", gui_window_flags):
-        im_text("Gold: " + int(gold) + " (+" + gps + "/s)")
       building_gui()
 
       if gl_button("f12") == 0:
