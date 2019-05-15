@@ -40,13 +40,14 @@ let dirs = [d_up, d_right, d_down, d_left]
 enum ResourceKind:
   b_copper
   b_mine
+  b_factory
   b_belt
 struct ResourcePair:
   res: ResourceKind
   num: int
 class Recipe:
   output: ResourceKind
-  inputs: [ResourcePair]
+  inputs: [ResourcePair]?
   ticks: int
 class Resource:
   name: string
@@ -55,32 +56,39 @@ class Resource:
 
 let resource_data = [
   Resource { "Copper", color { 0.8, 0.7, 0.3, 1.0 }, []},
-  Resource { "Mine", color { 0.7, 0.7, 0.9, 1.0 }, [
+  Resource { "Mine", color { 0.6, 0.6, 0.9, 1.0 }, [
     Recipe { b_copper, [], 5 },
   ]},
-  Resource { "Belt", color { 0.6, 0.6, 0.6, 1.0 }, []},
+  Resource { "Factory", color { 0.8, 0.5, 0.4, 1.0 }, [
+    Recipe { b_belt, [ ResourcePair { b_copper, 5 } ], 10 },
+  ]},
+  Resource { "Belt", color { 0.6, 0.6, 0.6, 1.0 }, [
+    Recipe { b_belt, nil, 2 },
+  ]},
 ]
 
 class Building:
   info: Resource
   dir: Dir
+  ticks: int
 
 // Not all resources can be built
 let all_buildings = [
   b_mine,
   b_belt,
+  b_factory,
 ]
 
 var gold = 0.0
 
-var selected_building: ResourceKind = b_mine
+var selected_building = 0
 def building_gui():
   im_window("Buildings", gui_window_flags):
     let names = map(all_buildings) b:
       resource_data[b].name
     let idx = im_listbox("", names, selected_building, all_buildings.length)
     if idx != selected_building:
-      selected_building = ResourceKind(idx)
+      selected_building = idx
 
 let building_grid: [[Building?]] = []
 var selected_dir = d_right
@@ -151,6 +159,7 @@ def do_grid(dt):
             building = Building {
               info: resource_data[building_idx],
               dir: selected_dir,
+              ticks: 0,
             }
             building_grid[x][y] = building
           if gl_button("mouse3") >= 1:
@@ -187,7 +196,7 @@ def main():
   assert im_add_font("data/fonts/Droid_Sans/DroidSans.ttf", 20.0)
 
   var background_color = color { 162, 168, 132, 255 } / 255
-  var is_debugging = true
+  var is_debugging = false
   while gl_frame():
     if gl_button("escape") == 1:
       return
