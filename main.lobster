@@ -78,6 +78,7 @@ class Building:
   kind: ResourceKind
   dir: Dir
   ticks: int
+  recipe: Recipe?
 def info(building: Building):
   return resource_data[building.kind]
 
@@ -174,10 +175,18 @@ def do_grid(dt):
           hovered_cell = xy {x, y}
           if gl_button("mouse1") >= 1:
             let kind = all_buildings[selected_building]
+            let info = resource_data[kind]
+            let recipes = info.recipes
+            let recipe =
+              if recipes.length > 0:
+                recipes[0]
+              else:
+                nil
             building = Building {
               kind: kind,
               dir: selected_dir,
               ticks: 0,
+              recipe: recipe,
             }
             building_grid[x][y] = building
           if gl_button("mouse3") >= 1:
@@ -202,6 +211,18 @@ def update_dir():
       selected_dir = dirs[i]
       return
 
+def tick():
+  // todo: abstract out the double-for into a function? for_buildings or smth
+  for(building_grid) row, x:
+    for(row) building, y:
+      if building and building.recipe:
+        building.ticks += 1
+        if building.ticks > building.recipe.ticks:
+          building.ticks = 0
+          building_counts[building.recipe.output] += 1
+
+var ticks_per_sec = 10
+var tick_timer = 0.0
 def main():
   fatal(gl_window("Simple Clicker", 1280, 1024))
   tri_res = gl_new_poly([
@@ -222,9 +243,15 @@ def main():
     update_dir()
 
     let dt = gl_delta_time()
+    tick_timer += dt
+    let tick_rate = 1.0 / ticks_per_sec
+    if tick_timer > tick_rate:
+      tick_timer -= tick_rate
+      tick()
 
     debug():
       background_color = im_coloredit("background_color", background_color)
+      ticks_per_sec = im_sliderint("ticks/sec", ticks_per_sec, 1, 100)
     gl_clear(background_color)
 
     gl_color(color_blue)
