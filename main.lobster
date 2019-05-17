@@ -173,23 +173,26 @@ def do_grid(dt):
       gl_translate(pos):
         if gl_hit(cell_size, 0):
           hovered_cell = xy {x, y}
-          if gl_button("mouse1") >= 1:
+          if gl_button("mouse1") >= 1 and not building:
             let kind = all_buildings[selected_building]
-            let info = resource_data[kind]
-            let recipes = info.recipes
-            let recipe =
-              if recipes.length > 0:
-                recipes[0]
-              else:
-                nil
-            building = Building {
-              kind: kind,
-              dir: selected_dir,
-              ticks: 0,
-              recipe: recipe,
-            }
-            building_grid[x][y] = building
-          if gl_button("mouse3") >= 1:
+            if building_counts[kind] > 0:
+              building_counts[kind]--
+              let info = resource_data[kind]
+              let recipes = info.recipes
+              let recipe =
+                if recipes.length > 0:
+                  recipes[0]
+                else:
+                  nil
+              building = Building {
+                kind: kind,
+                dir: selected_dir,
+                ticks: 0,
+                recipe: recipe,
+              }
+              building_grid[x][y] = building
+          if gl_button("mouse3") >= 1 and building:
+            building_counts[building.kind]++
             building = nil
             building_grid[x][y] = building
         if not building:
