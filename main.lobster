@@ -67,20 +67,42 @@ let resource_data = [
     Recipe { b_copper, [], 5 },
   ]},
   Resource { "Factory", color { 0.8, 0.5, 0.4, 1.0 }, [
-    Recipe { b_belt, [ ResourcePair { b_copper, 5 } ], 10 },
+    Recipe { b_mine, [ ResourcePair { b_copper, 5 } ], 10 },
   ]},
   Resource { "Belt", color { 0.6, 0.6, 0.6, 1.0 }, [
     Recipe { b_belt, nil, 2 },
   ]},
 ]
 
+def info(kind: ResourceKind):
+  return resource_data[kind]
+def name(kind: ResourceKind):
+  return kind.info.name
+
+def resource_vector(default_val):
+  let result = []
+  for(b_RES_COUNT) _:
+    result.push(default_val)
+  return result
+
 class Building:
   kind: ResourceKind
   dir: Dir
   ticks: int
   recipe: Recipe?
+  inventory: [int] // ResourceKind -> count
+def new_building(kind, dir, recipe):
+  return Building {
+    kind: kind,
+    dir: dir,
+    recipe: recipe,
+    ticks: 0,
+    inventory: resource_vector(0),
+  }
 def info(building: Building):
-  return resource_data[building.kind]
+  return building.kind.info
+def name(building: Building):
+  return building.kind.name
 
 // Not all resources can be built
 let all_buildings = [
@@ -89,12 +111,12 @@ let all_buildings = [
   b_factory,
 ]
 
-let building_counts = []
-for(b_RES_COUNT) _:
-  building_counts.push(0)
+let building_counts = resource_vector(0)
 building_counts[b_mine] = 2
+building_counts[b_factory] = 1
 
 var selected_building = 0
+var hovered_building: Building? = nil
 def disp_name(b):
   return resource_data[b].name + ": " + building_counts[b]
 def building_gui():
@@ -109,6 +131,19 @@ def building_gui():
     let res_names = map(non_buildings): disp_name(_)
     im_listbox(" ", res_names, -1, res_names.length)
 
+  im_window("Selected Building", gui_window_flags):
+    if not hovered_building:
+      im_text("(None)")
+    else:
+      im_text(hovered_building.info.name)
+      if hovered_building.recipe:
+        im_text("Making: " + hovered_building.recipe.output.name)
+      im_text("inventory:")
+      for(hovered_building.inventory.length) kind:
+        let count = hovered_building.inventory[kind]
+        if count > 0:
+          im_text(kind.name + ": " + count)
+
 let building_grid: [[Building?]] = []
 var selected_dir = d_right
 
@@ -118,7 +153,6 @@ var cell_size = xy_f { 48, 48 }
 var cell_border = 4.0
 var arrow_offset_pct = 0.45
 var arrow_size = 12
-var hovered_cell = xy_i { -1, -1 }
 def do_grid(dt):
   let all_size = float(grid_dim) * (cell_size + cell_border)
 
@@ -167,12 +201,13 @@ def do_grid(dt):
     gl_line(start, end, cell_border)
 
   // grid
+  hovered_building = nil
   for(building_grid) row, x:
     for(row) building, y:
       let pos = grid_origin + cell_with_border * xy_f { x, y }
       gl_translate(pos):
         if gl_hit(cell_size, 0):
-          hovered_cell = xy {x, y}
+          hovered_building = building
           if gl_button("mouse1") >= 1 and not building:
             let kind = all_buildings[selected_building]
             if building_counts[kind] > 0:
@@ -184,12 +219,7 @@ def do_grid(dt):
                   recipes[0]
                 else:
                   nil
-              building = Building {
-                kind: kind,
-                dir: selected_dir,
-                ticks: 0,
-                recipe: recipe,
-              }
+              building = new_building(kind, selected_dir, recipe)
               building_grid[x][y] = building
           if gl_button("mouse3") >= 1 and building:
             building_counts[building.kind]++
