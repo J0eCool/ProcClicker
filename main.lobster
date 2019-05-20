@@ -118,7 +118,7 @@ building_counts[b_factory] = 1
 var selected_building = 0
 var hovered_building: Building? = nil
 def disp_name(b):
-  return resource_data[b].name + ": " + building_counts[b]
+  return b.name + ": " + building_counts[b]
 def building_gui():
   im_window("Buildings", gui_window_flags):
     let names = map(all_buildings): disp_name(_)
@@ -138,11 +138,12 @@ def building_gui():
       im_text(hovered_building.info.name)
       if hovered_building.recipe:
         im_text("Making: " + hovered_building.recipe.output.name)
-      im_text("inventory:")
+        im_sliderfloat("Progress", float(hovered_building.ticks) / hovered_building.recipe.ticks, 0.0, 1.0)
+      im_text("Inventory:")
       for(hovered_building.inventory.length) kind:
         let count = hovered_building.inventory[kind]
         if count > 0:
-          im_text(kind.name + ": " + count)
+          im_text(resource_data[kind].name + ": " + count)
 
 let building_grid: [[Building?]] = []
 var selected_dir = d_right
@@ -153,6 +154,12 @@ var cell_size = xy_f { 48, 48 }
 var cell_border = 4.0
 var arrow_offset_pct = 0.45
 var arrow_size = 12
+
+def for_buildings(body):
+  for(building_grid) row, x:
+    for(row) building, y:
+      body(building, x, y)
+
 def do_grid(dt):
   let all_size = float(grid_dim) * (cell_size + cell_border)
 
@@ -202,40 +209,39 @@ def do_grid(dt):
 
   // grid
   hovered_building = nil
-  for(building_grid) row, x:
-    for(row) building, y:
-      let pos = grid_origin + cell_with_border * xy_f { x, y }
-      gl_translate(pos):
-        if gl_hit(cell_size, 0):
-          hovered_building = building
-          if gl_button("mouse1") >= 1 and not building:
-            let kind = all_buildings[selected_building]
-            if building_counts[kind] > 0:
-              building_counts[kind]--
-              let info = resource_data[kind]
-              let recipes = info.recipes
-              let recipe =
-                if recipes.length > 0:
-                  recipes[0]
-                else:
-                  nil
-              building = new_building(kind, selected_dir, recipe)
-              building_grid[x][y] = building
-          if gl_button("mouse3") >= 1 and building:
-            building_counts[building.kind]++
-            building = nil
+  for_buildings() building, x, y:
+    let pos = grid_origin + cell_with_border * xy_f { x, y }
+    gl_translate(pos):
+      if gl_hit(cell_size, 0):
+        hovered_building = building
+        if gl_button("mouse1") >= 1 and not building:
+          let kind = all_buildings[selected_building]
+          if building_counts[kind] > 0:
+            building_counts[kind]--
+            let info = resource_data[kind]
+            let recipes = info.recipes
+            let recipe =
+              if recipes.length > 0:
+                recipes[0]
+              else:
+                nil
+            building = new_building(kind, selected_dir, recipe)
             building_grid[x][y] = building
-        if not building:
-          gl_color(color_green)
-          gl_rect(cell_size)
-        else:
-          gl_color(building.info.color)
-          gl_rect(cell_size)
-          gl_color(color_white)
-          let center = cell_size / 2
-          let arrow_offset = cell_size * arrow_offset_pct
-          let d = building.dir.to_vec()
-          draw_triangle(center + d * arrow_offset, arrow_size, d)
+        if gl_button("mouse3") >= 1 and building:
+          building_counts[building.kind]++
+          building = nil
+          building_grid[x][y] = building
+      if not building:
+        gl_color(color_green)
+        gl_rect(cell_size)
+      else:
+        gl_color(building.info.color)
+        gl_rect(cell_size)
+        gl_color(color_white)
+        let center = cell_size / 2
+        let arrow_offset = cell_size * arrow_offset_pct
+        let d = building.dir.to_vec()
+        draw_triangle(center + d * arrow_offset, arrow_size, d)
 
 def update_dir():
   let axes = ["up", "right", "down", "left"]
@@ -246,13 +252,23 @@ def update_dir():
 
 def tick():
   // todo: abstract out the double-for into a function? for_buildings or smth
-  for(building_grid) row, x:
-    for(row) building, y:
-      if building and building.recipe:
-        building.ticks += 1
-        if building.ticks > building.recipe.ticks:
-          building.ticks = 0
-          building_counts[building.recipe.output] += 1
+  for_buildings() building, x, y:
+    if building and building.recipe:
+      let recipe = building.recipe
+      building.ticks += 1
+      if building.ticks > recipe.ticks:
+        building.ticks = 0
+        let target = xy_i { x, y } + int(building.dir.to_vec())
+        let cond = (target < grid_dim) + (target >= 0) >= 2
+        let neighbor = if cond.x and cond.y:
+          building_grid[target.x][target.y]
+        else:
+          nil
+        let output = recipe.output
+        if neighbor:
+          neighbor.inventory[output] += 1
+        else:
+          building_counts[output] += 1
 
 var ticks_per_sec = 10
 var tick_timer = 0.0
