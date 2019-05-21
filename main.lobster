@@ -49,12 +49,13 @@ enum ResourceKind:
   b_factory
   b_belt
   b_RES_COUNT // last
+  b_ANY
 struct ResourcePair:
   res: ResourceKind
   num: int
 class Recipe:
   output: ResourceKind
-  inputs: [ResourcePair]?
+  inputs: [ResourcePair]
   ticks: int
 class Resource:
   name: string
@@ -70,7 +71,7 @@ let resource_data = [
     Recipe { b_mine, [ ResourcePair { b_copper, 5 } ], 10 },
   ]},
   Resource { "Belt", color { 0.6, 0.6, 0.6, 1.0 }, [
-    Recipe { b_belt, nil, 2 },
+    Recipe { b_belt, [ ResourcePair { b_ANY, 4 } ], 2 },
   ]},
 ]
 
@@ -251,24 +252,32 @@ def update_dir():
       return
 
 def tick():
-  // todo: abstract out the double-for into a function? for_buildings or smth
   for_buildings() building, x, y:
     if building and building.recipe:
       let recipe = building.recipe
-      building.ticks += 1
-      if building.ticks > recipe.ticks:
-        building.ticks = 0
-        let target = xy_i { x, y } + int(building.dir.to_vec())
-        let cond = (target < grid_dim) + (target >= 0) >= 2
-        let neighbor = if cond.x and cond.y:
-          building_grid[target.x][target.y]
-        else:
-          nil
-        let output = recipe.output
-        if neighbor:
-          neighbor.inventory[output] += 1
-        else:
-          building_counts[output] += 1
+      var has_items = true
+      // make sure we have enough input
+      for(building.recipe.inputs) input:
+        if building.inventory[input.res] < input.num:
+          has_items = false
+      if has_items:
+        building.ticks += 1
+        if building.ticks > recipe.ticks:
+          building.ticks = 0
+          let target = xy_i { x, y } + int(building.dir.to_vec())
+          let cond = (target < grid_dim) + (target >= 0) >= 2
+          let neighbor = if cond.x and cond.y:
+            building_grid[target.x][target.y]
+          else:
+            nil
+          let output = recipe.output
+          if neighbor:
+            neighbor.inventory[output] += 1
+          else:
+            building_counts[output] += 1
+          // remove inputs from inventory
+          for(building.recipe.inputs) input:
+            building.inventory[input.res] -= input.num
 
 var ticks_per_sec = 10
 var tick_timer = 0.0
